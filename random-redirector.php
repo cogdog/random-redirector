@@ -33,43 +33,28 @@ if ( ! defined( 'WPINC' ) ) {
 // one day ths can be plugin option but I am lazy today ;-)
 define("RANDOMSLUG", "random");
 
-/* set up rewrite rules */
+// -----  add an allowable url parameter
+
+add_filter('query_vars', 'randypost_redirect_queryvars' );
+
+function randypost_redirect_queryvars( $qvars ) {
+	$qvars[] = RANDOMSLUG; // flag for random generator, define in constant
+	return $qvars;
+}
+
+// -----  set up rewrite rules
+add_action('init','randypost_redirect_rewrite_rules');
 
 function randypost_redirect_rewrite_rules() {
 	// let's create a rewrite rule for our random link and slug
 	add_rewrite_rule(RANDOMSLUG . '/?$', 'index.php?' . RANDOMSLUG  . '=y', 'top');
 }
 
-add_action('init','randypost_redirect_rewrite_rules');
 
-
-// -----  set up on activation
-
-function randypost_redirect_activate() { 
-	// Trigger our function that adds our rewrite rule
-	randypost_redirect_rewrite_rules();
-	
-	// Clear the permalinks after rewrite has been added.
-	flush_rewrite_rules(); 
-}
-register_activation_hook( __FILE__, 'randypost_redirect_activate' );
-
-// -----  clean up on de-activation
-register_deactivation_hook( __FILE__, 'flush_rewrite_rules' );
-
-// -----  add an allowable url parameter
-function randypost_redirect_queryvars( $qvars ) {
-	$qvars[] = RANDOMSLUG; // flag for random generator, define in constant
-	return $qvars;
-}
-
-add_filter('query_vars', 'randypost_redirect_queryvars' );
-
-
-// -----  add an allowable url parameter
+// -----  handle the rewrite request
+add_action('template_redirect', 'randypost_redirect_redirector');
 
 function randypost_redirect_redirector() {
-
  	// manage redirect for /random
    if ( get_query_var(RANDOMSLUG) == 'y' ) {
 		 // set arguments for WP_Query on published posts to get one post at random
@@ -95,6 +80,17 @@ function randypost_redirect_redirector() {
    }
  }
  
- add_action('template_redirect', 'randypost_redirect_redirector');
+// -----  set up on activation, flush rewrite rules
+function randypost_redirect_activate() { 
+	// Trigger our function that adds our rewrite rule
+	randypost_redirect_rewrite_rules();
+	
+	// Clear the permalinks after rewrite has been added.
+	flush_rewrite_rules(); 
+}
+register_activation_hook( __FILE__, 'randypost_redirect_activate' );
+
+// -----  clean up on de-activation
+register_deactivation_hook( __FILE__, 'flush_rewrite_rules' );
 
  ?>
